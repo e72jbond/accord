@@ -1,3 +1,4 @@
+sudo pip install virtualenv
 virtualenv VIRTUAL
 source VIRTUAL/bin/activate
 pip install -r requirements.txt
