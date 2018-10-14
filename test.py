@@ -11,7 +11,7 @@ files = [f for f in listdir(ddir) if isfile(join(ddir, f))]
 
 files.sort()
 
-print files
+#print files
 
 cows = {}
 for f in files:
@@ -29,11 +29,11 @@ for f in files:
 maxPoints = 0
 for cow in cows:
     points = len(cows[cow])
-    print "{0}: {1}".format(cow, points)
+    #print "{0}: {1}".format(cow, points)
     if points > maxPoints:
         maxPoints = points
 
-print "Max: {0}".format(maxPoints)
+#print "Max: {0}".format(maxPoints)
 
 # filter out missing points
 rangeCows = {}
@@ -44,7 +44,7 @@ for cow in cows:
         rangeCows[cow] = cows[cow]
         numCows += 1
 
-print "Range Total: {0}".format(numCows) 
+#print "Range Total: {0}".format(numCows) 
 
 # filter 1st point < $1
 valueCows = {}
@@ -55,10 +55,10 @@ for cow in rangeCows:
         valueCows[cow] = rangeCows[cow]
         numCows += 1
 
-print "Value Total: {0}".format(numCows) 
+#print "Value Total: {0}".format(numCows) 
 
-#trainCows = 274
-trainCows = 10
+trainCows = 274
+#trainCows = 10
 trainPoints = 126
 
 cowArray = []
@@ -103,36 +103,51 @@ for cow in cowArray:
 #
 #    cowCount += 1
 
-clf = svm.SVC(gamma='auto')
-clf.fit(cowData, cowClassifications)
+#clf = svm.SVC(gamma='auto')
+#kernels = ['rbf', 'linear', 'poly', 'sigmoid']
 
-predictArray = []
-for cow in cowTest:
-    predictArray.append(cows[cow][0:trainPoints])
+kernel = 'rbf'
 
-predictions = clf.predict(predictArray)
-print "PRED: {0}".format(predictions)
-
-predCount = 0
-correctCount = 0
-incPredCount = 0
-incCorrectCount = 0
-for cow in cowTest:
-    print "COW: {0}: {1}, actual: {2}".format(cow, predictions[predCount], cowClassificationsTest[predCount])
-
-    if predictions[predCount] == cowClassificationsTest[predCount]:
-        correctCount += 1
-
+#gammaVal = (1 / float(trainPoints)) - 0.005
+gammaVal = 0.0001
+gammaValMax = (1 / float(trainPoints)) + 0.5
+while gammaVal < gammaValMax:
+    #print "KERNEL {0}, GAMMA: {1}".format(kernel, gammaVal)
+    clf = svm.SVC(kernel=kernel, gamma=gammaVal)
+    
+    clf.fit(cowData, cowClassifications)
+    
+    predictArray = []
+    for cow in cowTest:
+        predictArray.append(cows[cow][0:trainPoints])
+    
+    predictions = clf.predict(predictArray)
+    #print "PRED: {0}".format(predictions)
+    
+    predCount = 0
+    correctCount = 0
+    incPredCount = 0
+    incCorrectCount = 0
+    for cow in cowTest:
+        #print "COW: {0}: {1}, actual: {2}".format(cow, predictions[predCount], cowClassificationsTest[predCount])
+    
+        if predictions[predCount] == cowClassificationsTest[predCount]:
+            correctCount += 1
+    
+            if predictions[predCount] == 1:
+                incCorrectCount += 1
+    
         if predictions[predCount] == 1:
-            incCorrectCount += 1
+            incPredCount += 1
+    
+        predCount += 1
+    
+    correctPerc = float(correctCount) / float(predCount)
+    #print "{0}% overall correct from {1}".format(correctPerc * float(100), predCount)
+    
+    incCorrectPerc = float(incCorrectCount) / float(incPredCount)
+    #print "{0}% increase correct from {1}".format(incCorrectPerc * float(100), incPredCount)
 
-    if predictions[predCount] == 1:
-        incPredCount += 1
+    print "K:{0},GAMMA:{1},T:{2},TC:{3},I:{4},IC:{5}".format(kernel, gammaVal, predCount, correctPerc * float(100), incPredCount, incCorrectPerc * float(100))
 
-    predCount += 1
-
-correctPerc = float(correctCount) / float(predCount)
-print "{0}% overall correct from {1}".format(correctPerc * float(100), predCount)
-
-incCorrectPerc = float(incCorrectCount) / float(incPredCount)
-print "{0}% increase correct from {1}".format(incCorrectPerc * float(100), incPredCount)
+    gammaVal += 0.0001
